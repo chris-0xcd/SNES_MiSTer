@@ -116,6 +116,10 @@ module hps_io #(parameter CONF_STR, CONF_STR_BRAM=1, PS2DIV=0, WIDE=0, VDNUM=1, 
 	input              status_set,
 	input       [15:0] status_menumask,
 
+	input              save_pending,
+	output reg         trigger_save,
+	output reg         real_autosave_enabled = 0,
+
 	input             info_req,
 	input       [7:0] info,
 
@@ -312,6 +316,7 @@ always@(posedge clk_sys) begin : uio_block
 		io_dout <= 0;
 		ps2skip <= 0;
 		img_mounted <= 0;
+		trigger_save <= 0;
 	end
 	else if(io_strobe) begin
 
@@ -343,6 +348,7 @@ always@(posedge clk_sys) begin : uio_block
 				'h033F: io_dout <= joystick_3_rumble;
 				'h043F: io_dout <= joystick_4_rumble;
 				'h053F: io_dout <= joystick_5_rumble;
+				  'h4E: begin io_dout <= save_pending; real_autosave_enabled <= 1'b1; end
 			endcase
 
 			sd_buff_addr <= 0;
@@ -543,6 +549,8 @@ always@(posedge clk_sys) begin : uio_block
 								3: {uart_speed, uart_mode} <= {io_din, tmp1, tmp2};
 							endcase
 						end
+				// autosave
+				'h4f: trigger_save <= io_din[0];
 			endcase
 		end
 	end

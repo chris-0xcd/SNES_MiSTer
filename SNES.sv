@@ -179,7 +179,7 @@ assign ADC_BUS  = 'Z;
 assign AUDIO_S   = 1;
 assign AUDIO_MIX = status[20:19];
 
-assign LED_USER  = cart_download | spc_download | (status[23] & bk_pending);
+assign LED_USER  = cart_download | spc_download | (status[23] & bk_pending) | (real_autosave_enabled & bk_pending);
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 assign BUTTONS   = osd_btn;
@@ -361,6 +361,8 @@ wire [15:0] sd_buff_din;
 wire        sd_buff_wr;
 wire        img_mounted;
 wire        img_readonly;
+wire        trigger_save;
+wire        real_autosave_enabled;
 wire [63:0] img_size;
 wire        ioctl_download;
 wire [24:0] ioctl_addr;
@@ -420,6 +422,10 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1)) hps_io
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
 	.img_size(img_size),
+
+	.save_pending(~bk_save & bk_pending),
+	.trigger_save(trigger_save),
+	.real_autosave_enabled(real_autosave_enabled),
 
 	.RTC(RTC),
 
@@ -1078,7 +1084,7 @@ always @(posedge clk_sys) begin
 end
 
 wire bk_load    = status[12];
-wire bk_save    = status[13] | (bk_pending & OSD_STATUS && status[23]);
+wire bk_save    = status[13] | (bk_pending & OSD_STATUS && status[23]) | trigger_save;
 reg  bk_loading = 0;
 reg  bk_state   = 0;
 
